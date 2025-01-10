@@ -33,7 +33,10 @@ function Signup() {
       setError(data.message);
       setLoading(false);
       if(data.statusCode === 409){
-        toast.error('User already exists');
+        toast.error('Email already exists');
+      }
+      else if(data.statusCode === 450){
+        toast.error('Username already taken');
       }
       else{
         toast.error('Account creation failed');

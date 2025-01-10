@@ -7,16 +7,32 @@ import jwt from "jsonwebtoken";
 dotenv.config();
 
 export const signup = async (req, res, next) => {
-  const { username, email, password } = req.body;
-  const hashedPassword = bcryptjs.hashSync(password, 10);
-  const newUser = User({ username, email, password: hashedPassword });
-  try {
-    await newUser.save();
-    res.status(201).json("User created successfully");
-  } catch (error) {
-    next(error);
-  }
-};
+    const { username, email, password } = req.body;
+  
+    try {
+      const existingUserByEmail = await User.findOne({ email });
+      if (existingUserByEmail) {
+        return next(errorHandler(409, "Email is already in use"));
+      }
+  
+      const existingUserByUsername = await User.findOne({ username });
+      if (existingUserByUsername) {
+        return next(errorHandler(450, "Username is already taken"));
+      }
+      const hashedPassword = bcryptjs.hashSync(password, 10);
+  
+      const newUser = new User({
+        username,
+        email,
+        password: hashedPassword
+      });
+  
+      await newUser.save();
+      res.status(201).json("User created successfully");
+    } catch (error) {
+      next(error);
+    }
+  };
 
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;

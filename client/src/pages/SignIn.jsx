@@ -83,7 +83,7 @@ function Signin() {
         <p>Dont have an account? </p>
         <Link to="/sign-up">
           <span className="text-blue-700 hover:text-blue-900 transition-all duration-150">
-            Sign in
+            Sign up
           </span>
         </Link>
       </div>
