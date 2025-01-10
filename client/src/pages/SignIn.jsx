@@ -18,6 +18,11 @@ function Signin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!formData.email || !formData.password) {
+      toast.error('Please fill all the fields');
+      return;
+    }
+
     try {
       setLoading(true);
     const res = await fetch("/api/auth/signin", {
