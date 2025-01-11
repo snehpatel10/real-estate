@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
+import { useSelector, useDispatch } from 'react-redux';
+import { signInStart, signInSuccess, signInFailure } from "../features/userSlice";
 
 function Signin() {
   const [formData, setFormData] = useState({});
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const { loading, error } = useSelector((state) => state.user);
   const navigate = useNavigate();
-  const handleChange = (e) => {
+  const dispatch = useDispatch();
 
+  const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.id]: e.target.value,
@@ -24,48 +26,50 @@ function Signin() {
     }
 
     try {
-      setLoading(true);
-    const res = await fetch("/api/auth/signin", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
-    const data = await res.json();
-    if(data.success === false){
-      setError(data.message);
-      setLoading(false);
-      if(data.statusCode === 401 || data.statusCode === 404){
-        toast.error('Invalid credentials');
+      dispatch(signInStart());
+
+      const res = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (data.success === false) {
+        dispatch(signInFailure(data.message));
+
+        if (data.statusCode === 401 || data.statusCode === 404) {
+          toast.error('Invalid credentials');
+        } else {
+          toast.error('Something went wrong');
+        }
+        return;
       }
-      else{
-        toast.error('Something went wrong');
-      }
-      return;
-    }
-    else{
-      setError(null);
+
+      // If response is successful
+      dispatch(signInSuccess(data));
       toast.success('Logged In successfully');
-      setLoading(false);
+
       setTimeout(() => {
         navigate("/");
       }, 1000);
-    }
-    setLoading(false);
+
     } catch (error) {
+      // Catch any network error or unexpected issue
       toast.error('Something went wrong');
-      setLoading(false);
+      dispatch(signInFailure(error.message));
     }
-    
-  }
+  };
 
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl text-center font-semibold my-7">
         Welcome Back
       </h1>
-      <form className="flex flex-col gap-4"  onSubmit={handleSubmit}>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <input
           type="text"
           placeholder="Enter email"
@@ -80,12 +84,16 @@ function Signin() {
           id="password"
           onChange={handleChange}
         />
-        <button disabled={loading} type="submit" className="bg-slate-700 text-white p-3 rounded-lg uppercase hover:bg-slate-800 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed">
+        <button
+          disabled={loading}
+          type="submit"
+          className="bg-slate-700 text-white p-3 rounded-lg uppercase hover:bg-slate-800 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {loading ? "loading..." : "Sign in"}
         </button>
       </form>
       <div className="flex gap-1 mt-5">
-        <p>Dont have an account? </p>
+        <p>Don't have an account? </p>
         <Link to="/sign-up">
           <span className="text-blue-700 hover:text-blue-900 transition-all duration-150">
             Sign up
@@ -96,4 +104,5 @@ function Signin() {
     </div>
   );
 }
+
 export default Signin;
