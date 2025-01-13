@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import { set } from "mongoose";
+import OAuth from "../components/OAuth";
 
 function Signup() {
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
@@ -146,6 +147,7 @@ function Signup() {
         >
           {loading ? "loading..." : "Sign up"}
         </button>
+        <OAuth /> 
       </form>
 
       <div className="flex gap-1 mt-5">
