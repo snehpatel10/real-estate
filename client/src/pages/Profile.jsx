@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { updateUserStart, updateUserSuccess, updateUserFailure } from "../features/userSlice";
-import toast, { Toaster } from 'react-hot-toast'
+import { updateUserStart, updateUserSuccess, updateUserFailure, deleteUserStart, deleteUserSuccess, deleteUserFailure } from "../features/userSlice";
+import toast, { Toaster } from 'react-hot-toast';
+import Modal from "react-modal";
 
 function Profile() {
   const fileRef = useRef(null);
   const { currentUser, loading } = useSelector((state) => state.user);
   const [file, setFile] = useState(undefined);
   const [formData, setFormData] = useState({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -64,6 +66,35 @@ function Profile() {
     );
   };
 
+  const handleDeleteUser = async () => {
+    try {
+      dispatch(deleteUserStart());
+      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success === false) {
+        dispatch(deleteUserFailure(data.message));
+        toast.error("An error occurred while deleting your account.");
+        return;
+      }
+      dispatch(deleteUserSuccess(data));
+      toast.success("Your account has been deleted.");
+    } catch (error) {
+      dispatch(deleteUserFailure(error.message));
+      toast.error("Internal server error. Please try again later.");
+    }
+    setIsModalOpen(false);  // Close the modal after the action
+  }
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  }
+
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
@@ -112,9 +143,36 @@ function Profile() {
         </button>
       </form>
       <div className="flex justify-between mt-5">
-        <span className="text-red-700 cursor-pointer">Delete account</span>
+        <span onClick={openModal} className="text-red-700 cursor-pointer">Delete account</span>
         <span className="text-red-700 cursor-pointer">Sign out</span>
       </div>
+      
+      {/* Confirmation Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onRequestClose={closeModal}
+        contentLabel="Confirm Delete"
+        className="bg-white p-6 rounded-lg shadow-lg w-96 mx-auto"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+      >
+        <h2 className="text-xl font-semibold text-center mb-4">Are you sure?</h2>
+        <p className="text-center text-gray-600 mb-6">This action cannot be undone. Do you really want to delete your account?</p>
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={handleDeleteUser}
+            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+          >
+            Yes, Delete
+          </button>
+          <button
+            onClick={closeModal}
+            className="bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
+
       <Toaster />
     </div>
   );
