@@ -14,6 +14,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import Modal from "react-modal";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 function Profile() {
   const fileRef = useRef(null);
@@ -102,7 +103,9 @@ function Profile() {
         navigate("/"); // Redirect to home page after deletion
       } else {
         dispatch(deleteUserFailure(data.message)); // Dispatch failure if something went wrong
-        toast.error(data.message || "An error occurred while deleting your account.");
+        toast.error(
+          data.message || "An error occurred while deleting your account."
+        );
       }
     } catch (error) {
       dispatch(deleteUserFailure(error.message));
@@ -136,7 +139,11 @@ function Profile() {
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4" encType="multipart/form-data">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-4"
+        encType="multipart/form-data"
+      >
         <input
           onChange={handleFileChange}
           type="file"
@@ -179,6 +186,13 @@ function Profile() {
         >
           {loading ? "Saving..." : "Save Changes"}
         </button>
+
+        <Link
+          to="/create-listing"
+          className="bg-green-700 text-white p-3 rounded-lg uppercase text-center hover:bg-green-800 transition-all duration-150"
+        >
+          Create Listing
+        </Link>
       </form>
 
       {/* Delete User Button */}
@@ -205,8 +219,12 @@ function Profile() {
         className="modal p-6 bg-white rounded-lg shadow-lg max-w-md mx-auto"
         overlayClassName="fixed inset-0 bg-black bg-opacity-50"
       >
-        <h2 className="text-xl font-semibold text-center mb-4">Are you sure?</h2>
-        <p className="text-center mb-4">This action will permanently delete your account.</p>
+        <h2 className="text-xl font-semibold text-center mb-4">
+          Are you sure?
+        </h2>
+        <p className="text-center mb-4">
+          This action will permanently delete your account.
+        </p>
         <div className="flex justify-between gap-4">
           <button
             onClick={() => setIsDeleteModalOpen(false)}
@@ -230,8 +248,12 @@ function Profile() {
         className="modal p-6 bg-white rounded-lg shadow-lg max-w-md mx-auto"
         overlayClassName="fixed inset-0 bg-black bg-opacity-50"
       >
-        <h2 className="text-xl font-semibold text-center mb-4">Are you sure?</h2>
-        <p className="text-center mb-4">You will be logged out of your account.</p>
+        <h2 className="text-xl font-semibold text-center mb-4">
+          Are you sure?
+        </h2>
+        <p className="text-center mb-4">
+          You will be logged out of your account.
+        </p>
         <div className="flex justify-between gap-4">
           <button
             onClick={() => setIsSignoutModalOpen(false)}
