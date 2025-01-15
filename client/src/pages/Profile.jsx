@@ -14,6 +14,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import Modal from "react-modal";
 import { useNavigate } from "react-router-dom";
+import authStorage from "../appwrite/storage.js";
 
 function Profile() {
   const fileRef = useRef(null);
@@ -47,8 +48,6 @@ function Profile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    // Prepare payload with only updated fields
     const payload = {};
     if (formData.username !== currentUser.username) {
       payload.username = formData.username;
@@ -57,9 +56,19 @@ function Profile() {
       payload.email = formData.email;
     }
     if (formData.password) {
-      payload.password = formData.password; // Include password only if provided
+      payload.password = formData.password;
     }
-  
+    if (file) {
+      try {
+        const uploadedFile = await authStorage.uploadFile(file);
+        if (uploadedFile) {
+          payload.avatar = uploadedFile.$id;
+        }
+      } catch (error) {
+        toast.error("Error uploading profile picture.");
+      }
+    }
+
     try {
       dispatch(updateUserStart());
       const res = await fetch(`/api/user/update/${currentUser._id}`, {
@@ -69,23 +78,13 @@ function Profile() {
         },
         body: JSON.stringify(payload),
       });
-  
+
       const data = await res.json();
-  
       if (!res.ok) {
         dispatch(updateUserFailure(data.message));
-        
-        // Show toast for specific error messages
-        if (data.message.includes("username")) {
-          toast.error("This username is already taken. Please choose another.");
-        } else if (data.message.includes("email")) {
-          toast.error("This email is already registered. Try a different one.");
-        } else {
-          toast.error(data.message || "An error occurred. Please try again.");
-        }
+        toast.error(data.message || "An error occurred. Please try again.");
         return;
       }
-  
       dispatch(updateUserSuccess(data.rest));
       toast.success("Changes saved successfully!");
     } catch (error) {
@@ -93,7 +92,6 @@ function Profile() {
       toast.error("Internal server error. Please try again later.");
     }
   };
-  
 
   const handleDeleteUser = async () => {
     try {
@@ -102,19 +100,22 @@ function Profile() {
         method: "DELETE",
       });
       const data = await res.json();
-      if (!data.success) {
-        dispatch(deleteUserFailure(data.message));
-        toast.error("An error occurred while deleting your account.");
-        return;
+  
+      if (res.ok) {  // Check if response is OK (successful)
+        dispatch(deleteUserSuccess(data));  // Dispatch success
+        toast.success("Your account has been deleted.");
+        navigate("/"); // Redirect to home page after deletion
+      } else {
+        dispatch(deleteUserFailure(data.message));  // Dispatch failure if something went wrong
+        toast.error(data.message || "An error occurred while deleting your account.");
       }
-      dispatch(deleteUserSuccess(data));
-      toast.success("Your account has been deleted.");
     } catch (error) {
       dispatch(deleteUserFailure(error.message));
       toast.error("Internal server error. Please try again later.");
     }
     setIsDeleteModalOpen(false);
   };
+  
 
   const handleSignout = async () => {
     try {
@@ -185,6 +186,75 @@ function Profile() {
           {loading ? "Loading..." : "Update"}
         </button>
       </form>
+
+      {/* Delete User Button */}
+      <div className="flex justify-between gap-4 mt-6">
+  <button
+    onClick={() => setIsDeleteModalOpen(true)}
+    className="bg-red-600 text-white rounded-lg px-6 py-3 hover:bg-red-700 transition-all"
+  >
+    Delete Account
+  </button>
+
+  <button
+    onClick={() => setIsSignoutModalOpen(true)}
+    className="bg-gray-700 text-white rounded-lg px-6 py-3 hover:bg-gray-800 transition-all"
+  >
+    Sign Out
+  </button>
+</div>
+
+
+      {/* Delete User Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onRequestClose={() => setIsDeleteModalOpen(false)}
+        className="modal p-6 bg-white rounded-lg shadow-lg max-w-md mx-auto"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-50"
+      >
+        <h2 className="text-xl font-semibold text-center mb-4">Are you sure?</h2>
+        <p className="text-center mb-4">This action will permanently delete your account.</p>
+        <div className="flex justify-between gap-4">
+          <button
+            onClick={() => setIsDeleteModalOpen(false)}
+            className="bg-gray-500 px-6 py-2 text-lg rounded-lg text-white"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDeleteUser}
+            className="bg-red-600 px-6 py-2 text-lg rounded-lg text-white"
+          >
+            Yes, Delete
+          </button>
+        </div>
+      </Modal>
+
+      {/* Sign Out Modal */}
+      <Modal
+        isOpen={isSignoutModalOpen}
+        onRequestClose={() => setIsSignoutModalOpen(false)}
+        className="modal p-6 bg-white rounded-lg shadow-lg max-w-md mx-auto"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-50"
+      >
+        <h2 className="text-xl font-semibold text-center mb-4">Are you sure?</h2>
+        <p className="text-center mb-4">You will be logged out of your account.</p>
+        <div className="flex justify-between gap-4">
+          <button
+            onClick={() => setIsSignoutModalOpen(false)}
+            className="bg-gray-500 px-6 py-2 text-lg rounded-lg text-white"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSignout}
+            className="bg-gray-700 px-6 py-2 text-lg rounded-lg text-white"
+          >
+            Yes, Sign Out
+          </button>
+        </div>
+      </Modal>
+
       <Toaster />
     </div>
   );

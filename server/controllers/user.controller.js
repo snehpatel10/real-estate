@@ -8,12 +8,12 @@ export const test = (req, res) => {
 
 export const updateUser = async (req, res, next) => {
   try {
-    // Verify if the user is authorized to update their account
+    // Verify authorization
     if (req.user.id !== req.params.id) {
       return next(errorHandler(401, "You can only update your own account"));
     }
 
-    // Hash the password if it is being updated
+    // Hash the password if being updated
     if (req.body.password) {
       req.body.password = bcryptjs.hashSync(req.body.password, 10);
     }
@@ -32,19 +32,22 @@ export const updateUser = async (req, res, next) => {
       }
     }
 
+    // Handle avatar update (if provided)
+    if (req.body.avatar) {
+      // Optionally, validate if the provided URL is valid or delete the old avatar
+    }
+
     // Perform the update
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
-      { new: true, runValidators: true } // Ensure the update is validated
+      { new: true, runValidators: true }
     );
 
-    // If user not found
     if (!updatedUser) {
       return next(errorHandler(404, "User not found"));
     }
 
-    // Exclude the password from the response
     const { password, ...rest } = updatedUser._doc;
     res.status(200).json({ success: true, rest });
   } catch (error) {
@@ -54,18 +57,31 @@ export const updateUser = async (req, res, next) => {
         errorHandler(409, `The ${field} is already in use. Please choose another.`)
       );
     }
-    next(error); // Pass other errors to error-handling middleware
-  }
-};
-
-
-export const deleteUser = async (req, res, next) => {
-  if (req.user.id !== req.params.id)
-    return next(errorHandler(401, "You can only delete your own account"));
-  try {
-    await User.findByIdAndDelete(req.params.id);
-    res.status(200).json("User has been deleted").clearCookie('access_token');
-  } catch (error) {
     next(error);
   }
 };
+
+
+
+export const deleteUser = async (req, res, next) => {
+  if (req.user.id !== req.params.id) {
+    return next(errorHandler(401, "You can only delete your own account"));
+  }
+
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Clear the cookie before sending the response
+    res.clearCookie('access_token');
+
+    // Send a proper JSON response
+    return res.status(200).json({ message: "User has been deleted" });
+  } catch (error) {
+    next(error);  // Pass error to the error handling middleware
+  }
+};
+
