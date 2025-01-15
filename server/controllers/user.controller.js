@@ -1,6 +1,7 @@
 import bcryptjs from "bcryptjs";
 import { errorHandler } from "../utils/error.js";
 import User from "../models/user.model.js";
+import { uploadOnCloudinary, deleteFileFromDisk } from "../utils/cloudinary.js";
 
 export const test = (req, res) => {
   res.send("Hello World!");
@@ -8,17 +9,17 @@ export const test = (req, res) => {
 
 export const updateUser = async (req, res, next) => {
   try {
-    // Verify authorization
+    // Verify authorization - the user can only update their own account
     if (req.user.id !== req.params.id) {
       return next(errorHandler(401, "You can only update your own account"));
     }
 
-    // Hash the password if being updated
+    // Hash the password if it is being updated
     if (req.body.password) {
       req.body.password = bcryptjs.hashSync(req.body.password, 10);
     }
 
-    // Check for duplicate email or username
+    // Check if the email or username already exists
     const existingUser = await User.findOne({
       $or: [{ email: req.body.email }, { username: req.body.username }],
     });
@@ -32,12 +33,25 @@ export const updateUser = async (req, res, next) => {
       }
     }
 
-    // Handle avatar update (if provided)
-    if (req.body.avatar) {
-      // Optionally, validate if the provided URL is valid or delete the old avatar
+    // Handle avatar upload (if provided)
+    if (req.file) {
+      // Upload the new avatar to Cloudinary
+      const cloudinaryResult = await uploadOnCloudinary(req.file.path);
+      if (cloudinaryResult) {
+        req.body.avatar = cloudinaryResult.secure_url;
+        
+        // Delete the local avatar file from the public/temp folder after upload
+        await deleteFileFromDisk(req.file.path);
+        
+        // Optionally, delete the old avatar if it exists in Cloudinary (and if there is one)
+        if (req.user.avatar) {
+          const oldAvatarPublicId = req.user.avatar.split('/').pop().split('.')[0]; // Extract public ID from URL
+          await cloudinary.uploader.destroy(oldAvatarPublicId);  // Delete the old avatar from Cloudinary
+        }
+      }
     }
 
-    // Perform the update
+    // Perform the update in the database
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
@@ -48,16 +62,20 @@ export const updateUser = async (req, res, next) => {
       return next(errorHandler(404, "User not found"));
     }
 
+    // Exclude the password from the response
     const { password, ...rest } = updatedUser._doc;
-    res.status(200).json({ success: true, rest });
+
+    // Send the updated user info as a response
+    res.status(200).json({ success: true, user: rest });
   } catch (error) {
+    // Handle MongoDB unique field error (e.g., email or username already taken)
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
       return next(
         errorHandler(409, `The ${field} is already in use. Please choose another.`)
       );
     }
-    next(error);
+    next(error); // Pass error to the error handling middleware
   }
 };
 
