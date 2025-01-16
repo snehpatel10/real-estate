@@ -5,13 +5,25 @@ import userRouter from './routes/user.route.js'
 import authRouter from './routes/auth.route.js'
 import listingRouter from './routes/listing.route.js'
 import cookieParser from 'cookie-parser'
+import cors from 'cors'
 
 dotenv.config()
 
 const app = express()
 
+app.use(cors({
+    origin: 'http://localhost:5173',  // Allow only this origin
+    methods: ['GET', 'POST'],  // Specify allowed methods
+    allowedHeaders: ['Content-Type', 'Authorization'],  // Specify allowed headers
+    credentials: true,  // Allow cookies to be sent
+}));
+
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
+
 app.use(cookieParser())
 app.use(express.json())
+
 
 mongoose.connect(process.env.MONGO_URI)
 

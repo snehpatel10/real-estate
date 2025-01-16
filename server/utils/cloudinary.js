@@ -2,14 +2,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 import { promises as fs } from 'fs';
 
-// Load environment variables from .env file
 dotenv.config();
-
-// Validate environment variables
-if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-  console.error('Cloudinary credentials are missing in environment variables.');
-  process.exit(1); // Stop the application if Cloudinary credentials are missing
-}
 
 // Configure Cloudinary with environment variables
 cloudinary.config({
@@ -18,26 +11,23 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Function to upload the image to Cloudinary
-const uploadOnCloudinary = async (localFilePath) => {
+// Upload image to Cloudinary
+export const uploadOnCloudinary = async (localFilePath, folderName = 'listings') => {
   try {
-    if (!localFilePath) return null; // Ensure that the file path is provided
+    if (!localFilePath) return null;
 
-    // Upload the image to Cloudinary
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: 'auto', // Auto-detect file type (image, video, etc.)
+      folder: folderName, // Specify folder
     });
 
-    // Return the Cloudinary response containing image info
     return {
-      secure_url: response.secure_url, // Cloudinary URL for the image
-      public_id: response.public_id, // Public ID if needed for future reference
+      secure_url: response.secure_url, // Cloud URL for the image
+      public_id: response.public_id, // Public ID to reference image
     };
   } catch (error) {
     console.error('Error uploading to Cloudinary:', error);
-    if (await fileExists(localFilePath)) {
-      await deleteFileFromDisk(localFilePath); // Delete the file from disk after failure
-    }
+    await deleteFileFromDisk(localFilePath); // Delete temp file on failure
     return null;
   }
 };
@@ -45,20 +35,18 @@ const uploadOnCloudinary = async (localFilePath) => {
 // Helper function to check if file exists
 const fileExists = async (filePath) => {
   try {
-    await fs.access(filePath); // Check if file exists
+    await fs.access(filePath);
     return true;
   } catch {
     return false;
   }
 };
 
-// Function to delete file from disk after upload
-const deleteFileFromDisk = async (filePath) => {
-    try {
-      await fs.unlink(filePath);
-    } catch (error) {
-      console.error('Error deleting file from disk:', error);
-    }
-  };
-
-export { uploadOnCloudinary, deleteFileFromDisk };
+// Function to delete temp files after upload
+export const deleteFileFromDisk = async (filePath) => {
+  try {
+    await fs.unlink(filePath);
+  } catch (error) {
+    console.error('Error deleting file from disk:', error);
+  }
+};
