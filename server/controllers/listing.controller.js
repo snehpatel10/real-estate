@@ -4,26 +4,10 @@ import { uploadOnCloudinary, deleteFileFromDisk } from '../utils/cloudinary.js';
 // Create a new listing
 export const createListing = async (req, res, next) => {
   try {
-    const { name, description, address, regularPrice, discountPrice, bedrooms, bathrooms, furnished, parking, type, offer, userRef } = req.body;
-
-    const newListing = await Listing.create({
-      name,
-      description,
-      address,
-      regularPrice,
-      discountPrice,
-      bedrooms,
-      bathrooms,
-      furnished,
-      parking,
-      type,
-      offer,
-      userRef
-    });
-
-    return res.status(200).json(newListing); // Return the created listing
+    const listing = await Listing.create(req.body);
+    return res.status(200).json(listing)
   } catch (error) {
-    next(error); // Error handling middleware
+    next(error)
   }
 };
 
