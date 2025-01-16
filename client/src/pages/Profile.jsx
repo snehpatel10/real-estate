@@ -23,6 +23,8 @@ function Profile() {
   const [avatar, setAvatar] = useState(null); // Track avatar file
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSignoutModalOpen, setIsSignoutModalOpen] = useState(false);
+  const [showListingError, setShowListingError] = useState(false);
+  const [userListings, setUserListings] = useState([]);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -136,6 +138,24 @@ function Profile() {
     setIsSignoutModalOpen(false);
   };
 
+  const handleShowListings = async () => {
+    try {
+      setShowListingError(false);
+      const res = await fetch(`/api/user/listings/${currentUser._id}`);
+      const data = await res.json();
+      if (data.success === false) {
+        setShowListingError(true);
+        toast.error("Error showing listings");
+      }
+      setShowListingError(false);
+      setUserListings(data);
+      console.log(userListings);
+    } catch (error) {
+      setShowListingError(true);
+      toast.error("Something went wrong");
+    }
+  };
+
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
@@ -196,21 +216,29 @@ function Profile() {
       </form>
 
       {/* Delete User Button */}
-      <div className="flex justify-between gap-4 mt-6">
+      <div className="flex justify-between  mt-6">
         <button
           onClick={() => setIsDeleteModalOpen(true)}
-          className="bg-red-600 text-white rounded-lg px-6 py-3 hover:bg-red-700 transition-all"
+          className=" text-red-700 font-normal  hover:text-red-800 transition-all duration-150"
         >
           Delete Account
         </button>
 
         <button
           onClick={() => setIsSignoutModalOpen(true)}
-          className="bg-gray-700 text-white rounded-lg px-6 py-3 hover:bg-gray-800 transition-all"
+          className=" text-red-700 font-normal hover:text-red-800 transition-all duration-150"
         >
           Sign Out
         </button>
       </div>
+
+      <button
+        className="text-green-700 mt-5 w-full mb-3"
+        onClick={handleShowListings}
+      >
+        {" "}
+        Show listings
+      </button>
 
       {/* Delete User Modal */}
       <Modal
@@ -269,6 +297,36 @@ function Profile() {
           </button>
         </div>
       </Modal>
+
+      {userListings && userListings.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <h1 className="text-center mt-7 text-2xl font-semibold">Your Listings</h1>
+          {userListings.map((listing) => (
+            <div
+              key={listing._id}
+              className="border rounded-lg p-3 flex justify-between items-center gap-4"
+            >
+              <Link to={`/listing/${listing._id}`}>
+                <img
+                  src={listing.imageUrls[0]}
+                  alt="Listing Cover"
+                  className="h-16 w-18 object-contain rounded"
+                />
+              </Link>
+              <Link
+                to={`/listing/${listing._id}`}
+                className="text-slate-700 font-semibold hover:underline truncate flex-1"
+              >
+                <p>{listing.name}</p>
+              </Link>
+
+              <div className="flex flex-col items-center"></div>
+              <button className="text-red-700 uppercase">Delete</button>
+              <button className="text-green-700 uppercase">Edit</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <Toaster />
     </div>
