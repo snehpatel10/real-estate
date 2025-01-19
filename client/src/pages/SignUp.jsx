@@ -4,7 +4,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { set } from "mongoose";
 import OAuth from "../components/OAuth";
 
-function Signup() {
+function SignUp() {
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
   const [errors, setErrors] = useState({ username: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
@@ -162,4 +162,4 @@ function Signup() {
   );
 }
 
-export default Signup;
+export default SignUp;
