@@ -117,7 +117,7 @@ export const forgotPassword = async (req, res, next) => {
       expiresIn: "10m", // Token expires in 10 minutes
     });
 
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
+    const resetUrl = `https://true-homes-143c.onrender.com/reset-password/${token}`;
 
     const mailOptions = {
       from: '"TrueHomes Support" <your-email@gmail.com>', // A more professional "from" name
