@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
-import { useSelector, useDispatch } from 'react-redux';
-import { signInStart, signInSuccess, signInFailure } from "../features/userSlice";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  signInStart,
+  signInSuccess,
+  signInFailure,
+} from "../features/userSlice";
 import OAuth from "../components/OAuth";
 
 function Signin() {
@@ -22,7 +26,7 @@ function Signin() {
     e.preventDefault();
 
     if (!formData.email || !formData.password) {
-      toast.error('Please fill all the fields');
+      toast.error("Please fill all the fields");
       return;
     }
 
@@ -43,33 +47,30 @@ function Signin() {
         dispatch(signInFailure(data.message));
 
         if (data.statusCode === 401 || data.statusCode === 404) {
-          toast.error('Invalid credentials');
+          toast.error("Invalid credentials");
         } else {
-          toast.error('Something went wrong');
+          toast.error("Something went wrong");
         }
         return;
       }
 
       // If response is successful
       dispatch(signInSuccess(data));
-      toast.success('Logged In successfully');
+      toast.success("Logged In successfully");
 
       setTimeout(() => {
         navigate("/");
       }, 1000);
-
     } catch (error) {
       // Catch any network error or unexpected issue
-      toast.error('Something went wrong');
+      toast.error("Something went wrong");
       dispatch(signInFailure(error.message));
     }
   };
 
   return (
     <div className="p-3 max-w-lg mx-auto">
-      <h1 className="text-3xl text-center font-semibold my-7">
-        Welcome Back
-      </h1>
+      <h1 className="text-3xl text-center font-semibold my-7">Welcome Back</h1>
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <input
           type="text"
@@ -85,6 +86,12 @@ function Signin() {
           id="password"
           onChange={handleChange}
         />
+        <div className="flex justify-end mb-3">
+          <Link to="/forgot-password" className=" text-blue-600 font-light text-sm hover:underline">
+            Forgot Password?
+          </Link>
+        </div>
+
         <button
           disabled={loading}
           type="submit"
